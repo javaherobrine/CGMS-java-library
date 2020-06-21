@@ -1,17 +1,16 @@
 package connect.http;
 import java.net.http.*;
-import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.*;
 import java.time.*;
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.zip.*;
+import java.util.concurrent.*;
 import java.net.*;
-public class HttpSocket {
+import java.util.zip.*;
+public class HttpConnection {
 	public static final HttpClient DEFAULT_CLIENT=HttpClient.newHttpClient();
-	public static byte[] get(String url,int timeout,String... header) throws IOException, InterruptedException {
-		HttpRequest request=HttpRequest.newBuilder().headers(header).GET().expectContinue(true).timeout(Duration.ofMillis(timeout)).build();
+	public static byte[] get(String url,int timeout,String... header) throws IOException, InterruptedException, URISyntaxException {
+		HttpRequest request=HttpRequest.newBuilder().uri(new URI(url)).headers(header).GET().expectContinue(true).timeout(Duration.ofMillis(timeout)).build();
 		return readHttp(DEFAULT_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream()));
 	}
 	private static byte[] readHttp(HttpResponse<InputStream> response) throws IOException {
@@ -49,5 +48,11 @@ public class HttpSocket {
 		CompletableFuture<HttpResponse<InputStream>> httpTask=DEFAULT_CLIENT.sendAsync(request, BodyHandlers.ofInputStream());
 		task.task();
 		return readHttp(httpTask.get());
+	}
+	public static byte[] getASync(Taskable task,String url,int timeout,String...header) throws Exception {
+		HttpRequest request=HttpRequest.newBuilder().uri(new URI(url)).headers(header).build();
+		CompletableFuture<HttpResponse<InputStream>> thisTask=DEFAULT_CLIENT.sendAsync(request, BodyHandlers.ofInputStream());
+		task.task();
+		return readHttp(thisTask.get());
 	}
 }
